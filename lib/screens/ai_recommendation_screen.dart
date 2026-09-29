@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import 'ai_alternative_looks_screen.dart';
 import 'cart_screen.dart';
 import 'product_detail_screen.dart';
+import 'try_on_studio_screen.dart';
 
 class AIRecommendationScreen extends StatelessWidget {
   const AIRecommendationScreen({super.key});
@@ -245,22 +246,25 @@ class AIRecommendationScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Action Buttons
+            // Virtual Try-On Primary Look Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  appState.initializeDefaultCart();
+                  appState.startTryOnWithLook(recommendedItems);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const CartScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const TryOnStudioScreen(),
+                    ),
                   );
                 },
-                icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                icon: const Icon(Icons.camera_enhance_rounded, color: Colors.white, size: 18),
                 label: Text(
-                  'Add set to cart • Rp318.000',
+                  '✦ Virtual Try-On This Look',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -271,6 +275,37 @@ class AIRecommendationScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Add set to cart button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  appState.initializeDefaultCart();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CartScreen()),
+                  );
+                },
+                icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryGreen, size: 18),
+                label: Text(
+                  'Add set to cart • Rp318.000',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primaryGreen),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
             ),

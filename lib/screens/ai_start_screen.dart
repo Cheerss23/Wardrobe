@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import 'ai_generating_screen.dart';
@@ -54,13 +55,113 @@ class AIStartScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Specify your occasion and preferences for AI personalization.',
+              'Tentukan preferensi untuk dipandu AI, atau pilih opsi otomatis.',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 color: AppColors.secondaryText,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Mode options banner
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pilihan Cara Kurasi Outfit:',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryText,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            appState.setStylingMode(StylingMode.autopilot);
+                            appState.setTabIndex(2);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primaryGreen),
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.primaryGreen),
+                              const SizedBox(height: 2),
+                              Text(
+                                'AI Tentukan',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.lightGreen,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.primaryGreen),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.tune_rounded, size: 16, color: AppColors.primaryGreen),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Dipandu AI',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            appState.setStylingMode(StylingMode.diy);
+                            appState.setTabIndex(2);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.border),
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.checkroom_rounded, size: 16, color: AppColors.secondaryText),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Susun Sendiri',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primaryText),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Section 1: Occasion
             _buildSectionHeader('Occasion'),

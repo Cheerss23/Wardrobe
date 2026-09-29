@@ -1,108 +1,150 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
-import 'ai_start_screen.dart';
 import 'product_detail_screen.dart';
+import 'shop_this_look_screen.dart';
+import 'cart_screen.dart';
+import 'saved_screen.dart';
+import 'try_on_studio_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  String selectedChip = 'Campus';
-  final List<String> occasions = [
-    'Campus',
-    'Hangout',
-    'Date',
-    'Office',
-    'Formal',
-    'Everyday'
-  ];
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final heroOutfit = appState.heroOutfit;
     final products = appState.products;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.only(bottom: 30),
           children: [
-            // Header Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Wardrobe Sense',
-                      style: GoogleFonts.fraunces(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryText,
+            // 1. Header Section
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Selamat pagi, Rahmat 👋',
+                        style: GoogleFonts.fraunces(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryText,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Your wardrobe, your style.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.secondaryText,
-                        fontWeight: FontWeight.w400,
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.wb_sunny_rounded, color: AppColors.warning, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            appState.weatherLocation,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.secondaryText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.card,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      // Wishlist Shortcut
+                      IconButton(
+                        icon: const Icon(Icons.favorite_border_rounded, color: AppColors.primaryText),
+                        tooltip: 'Wishlist',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SavedScreen()),
+                          );
+                        },
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.notifications_none_rounded, size: 20),
-                        onPressed: () {},
+                      // Cart Shortcut with Badge
+                      IconButton(
+                        icon: Badge(
+                          label: Text('${appState.cartCount}'),
+                          isLabelVisible: appState.cartCount > 0,
+                          backgroundColor: AppColors.primaryPurple,
+                          child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryText),
+                        ),
+                        tooltip: 'Keranjang',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const CartScreen()),
+                          );
+                        },
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const CircleAvatar(
-                      radius: 20,
-                      backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // AI Stylist Card (Main Highlight)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.card,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+                    ],
                   ),
                 ],
               ),
+            ),
+
+            // 2. Search Bar Shortcut (Tapping jumps to Discover tab)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: InkWell(
+                onTap: () => appState.setTabIndex(1), // Switch to Discover tab
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search_rounded, color: AppColors.primaryPurple, size: 22),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Cari brand, kemeja, celana, atau style...',
+                        style: GoogleFonts.inter(
+                          color: AppColors.tertiaryText,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurpleLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.tune_rounded, size: 16, color: AppColors.primaryPurple),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // 3. Hero Section: "Today's Style"
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -112,503 +154,697 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(6),
+                            padding: const EdgeInsets.all(5),
                             decoration: BoxDecoration(
-                              color: AppColors.lightGreen,
+                              color: AppColors.primaryPurpleLight,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
-                              Icons.auto_awesome,
-                              color: AppColors.primaryGreen,
-                              size: 18,
-                            ),
+                            child: const Icon(Icons.auto_awesome, color: AppColors.primaryPurple, size: 16),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'AI STYLIST',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryGreen,
-                              letterSpacing: 0.8,
+                            "Today's Style",
+                            style: GoogleFonts.fraunces(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryText,
                             ),
                           ),
                         ],
                       ),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.lightGreen,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '94% match',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryGreen,
-                              ),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurpleLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${heroOutfit.matchScore}% Match',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryPurple,
                           ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.softSurface,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Personalized',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.secondaryText,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Build an outfit from your wardrobe + UMKM pieces.',
-                    style: GoogleFonts.fraunces(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryText,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AIStartScreen()),
-                        );
-                      },
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                      label: Text(
-                        'Find my outfit',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+                  const SizedBox(height: 10),
 
-            // What are you dressing for? (Occasion Chips)
-            Text(
-              'What are you dressing for?',
-              style: GoogleFonts.fraunces(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primaryText,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: occasions.map((occ) {
-                  final isSelected = selectedChip == occ;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(occ),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          selectedChip = occ;
-                        });
-                        appState.setOccasion(occ);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AIStartScreen()),
-                        );
-                      },
-                      selectedColor: AppColors.primaryGreen,
-                      backgroundColor: AppColors.card,
-                      labelStyle: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.primaryText,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        side: BorderSide(
-                          color: isSelected ? AppColors.primaryGreen : AppColors.border,
-                        ),
-                      ),
-                      showCheckmark: false,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Recommended for you Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  'Recommended for you',
-                  style: GoogleFonts.fraunces(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryText,
-                  ),
-                ),
-                Text(
-                  'See all',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryGreen,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Based on your style, purchase history, and wardrobe.',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppColors.secondaryText,
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Product Cards List
-            SizedBox(
-              height: 250,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return Container(
-                    width: 170,
-                    margin: const EdgeInsets.only(right: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductDetailScreen(product: product),
-                          ),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                                child: Image.network(
-                                  product.image,
-                                  height: 135,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              if (product.badgeLabel != null)
-                                Positioned(
-                                  top: 8,
-                                  left: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: product.isOwned
-                                          ? AppColors.softSurface
-                                          : AppColors.lightGreen,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      product.badgeLabel!,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: product.isOwned
-                                            ? AppColors.primaryText
-                                            : AppColors.primaryGreen,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.seller,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    color: AppColors.secondaryText,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  product.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primaryText,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  product.formattedPrice,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: product.isOwned
-                                        ? AppColors.secondaryText
-                                        : AppColors.primaryGreen,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Use what you already own Section
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.softSurface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
+                  // Hero Outfit Card
                   Container(
-                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 18,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.checkroom_rounded,
-                      color: AppColors.primaryGreen,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Use what you already own',
-                          style: GoogleFonts.fraunces(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryText,
-                          ),
+                        // Large Outfit Photo with weather badge
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
+                              child: AspectRatio(
+                                aspectRatio: 1.45,
+                                child: Image.network(
+                                  heroOutfit.image,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: AppColors.softSurface,
+                                    child: const Icon(Icons.image, size: 48, color: AppColors.tertiaryText),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 12,
+                              left: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.wb_sunny_rounded, color: Colors.amber, size: 14),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      'Cocok untuk 28°C cuaca hari ini',
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'White sneakers match 3 saved looks.',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppColors.secondaryText,
+
+                        // Outfit Details & Items Breakdown
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                heroOutfit.title,
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryText,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                heroOutfit.whyMatchReasons.first,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppColors.secondaryText,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Items mini preview row
+                              SizedBox(
+                                height: 50,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: heroOutfit.items.length,
+                                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                  itemBuilder: (context, idx) {
+                                    final item = heroOutfit.items[idx];
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.softSurface,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: AppColors.border),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: Image.network(item.image, width: 34, height: 34, fit: BoxFit.cover),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item.name,
+                                                maxLines: 1,
+                                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold),
+                                              ),
+                                              Text(
+                                                item.isOwned ? 'Milikmu' : item.formattedPrice,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 10,
+                                                  color: item.isOwned ? AppColors.success : AppColors.secondaryText,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+
+                              const SizedBox(height: 14),
+
+                              // Price & CTAs: Shop This Look (Primary) > Try This Look (Secondary)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Bundle Price',
+                                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.secondaryText),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Rp${(heroOutfit.effectivePrice ~/ 1000)}.000',
+                                            style: GoogleFonts.fraunces(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primaryText,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.discountBadge,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              '-${heroOutfit.bundleDiscountPercentage}%',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      // Secondary CTA: Try This Look
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          appState.startTryOnWithLook(heroOutfit.items);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const TryOnStudioScreen(),
+                                            ),
+                                          );
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                          side: const BorderSide(color: AppColors.primaryPurple),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                        ),
+                                        child: Text(
+                                          'Try Look',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primaryPurple,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // Primary CTA: Shop This Look (Dominates visually)
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ShopThisLookScreen(outfit: heroOutfit),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+                                        label: const Text('Shop Look'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primaryPurple,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      appState.setTabIndex(1); // Jump to Wardrobe tab
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.card,
-                      foregroundColor: AppColors.primaryText,
-                      elevation: 0,
-                      side: const BorderSide(color: AppColors.border),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // 4. Section: Trending Now
+            _buildSectionHeader(
+              title: 'Trending Now 🔥',
+              subtitle: 'Paling banyak dilihat & dibeli minggu ini',
+              onSeeAll: () => appState.setTabIndex(1),
+            ),
+            _buildProductHorizontalList(
+              context,
+              products.where((p) => !p.isOwned).take(5).toList(),
+              appState,
+            ),
+
+            const SizedBox(height: 24),
+
+            // 5. Section: Best Picks For You (AI personalized)
+            _buildSectionHeader(
+              title: 'Best Picks For You ✨',
+              subtitle: 'Cocok 90%+ dengan profil gaya casual streetwear kamu',
+              onSeeAll: () => appState.setTabIndex(1),
+            ),
+            _buildProductHorizontalList(
+              context,
+              products.where((p) => (p.matchPercentage ?? 0) >= 94 && !p.isOwned).toList(),
+              appState,
+            ),
+
+            const SizedBox(height: 24),
+
+            // 6. Section: Limited Deals
+            _buildSectionHeader(
+              title: 'Limited Deals ⚡',
+              subtitle: 'Diskon spesial hingga 33% sebelum promo berakhir',
+              onSeeAll: () => appState.setTabIndex(1),
+            ),
+            _buildProductHorizontalList(
+              context,
+              products.where((p) => p.discountPercentage != null && p.discountPercentage! >= 22).toList(),
+              appState,
+            ),
+
+            const SizedBox(height: 24),
+
+            // 7. Section: Popular Brands
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Popular Brands',
+                style: GoogleFonts.fraunces(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryText,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  _buildBrandChip('Localwear', appState),
+                  _buildBrandChip('Street Co.', appState),
+                  _buildBrandChip('ZARA', appState),
+                  _buildBrandChip('Ruang Basic', appState),
+                  _buildBrandChip('Studio Monolith', appState),
+                  _buildBrandChip('Kita Apparel', appState),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // 8. Section: Recommended For Today's Weather (28°C Sunny)
+            _buildSectionHeader(
+              title: "Recommended for Today's Weather ☀️",
+              subtitle: 'Material linen & combed cotton dingin untuk hari cerah',
+              onSeeAll: () => appState.setTabIndex(1),
+            ),
+            _buildProductHorizontalList(
+              context,
+              products.where((p) => p.category == 'Tops' && !p.isOwned).toList(),
+              appState,
+            ),
+
+            const SizedBox(height: 24),
+
+            // 9. Section: Complete The Look Promo Banner
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: AppColors.purpleAiGradient,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'AI BUNDLE PROMO',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Lengkapi Lemarimu dengan Voucher FITLY10',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Dapatkan diskon 10% saat membeli item pelengkap.',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: () => appState.setTabIndex(2), // Jump to AI Stylist tab
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: AppColors.primaryPurple,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: Text(
+                              'Konsultasi AI Stylist',
+                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Text(
-                      'Use mine',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&auto=format&fit=crop&q=80',
+                        width: 90,
+                        height: 110,
+                        fit: BoxFit.cover,
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+    required VoidCallback onSeeAll,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.fraunces(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryText,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.secondaryText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onSeeAll,
+            child: Text(
+              'Lihat Semua',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryPurple,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductHorizontalList(
+    BuildContext context,
+    List<ProductItem> items,
+    AppState appState,
+  ) {
+    return SizedBox(
+      height: 250,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        itemBuilder: (context, index) {
+          final product = items[index];
+          final isSaved = appState.isSaved(product.id);
+
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProductDetailScreen(product: product),
+                ),
+              );
+            },
+            child: Container(
+              width: 160,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image with badges
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
+                        child: AspectRatio(
+                          aspectRatio: 1.1,
+                          child: Image.network(
+                            product.image,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: AppColors.softSurface,
+                              child: const Icon(Icons.image),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (product.matchPercentage != null)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryPurple,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.auto_awesome, color: Colors.white, size: 10),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${product.matchPercentage}%',
+                                  style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            iconSize: 16,
+                            padding: const EdgeInsets.all(5),
+                            constraints: const BoxConstraints(),
+                            icon: Icon(
+                              isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              color: isSaved ? AppColors.discountBadge : AppColors.secondaryText,
+                            ),
+                            onPressed: () => appState.toggleSave(product.id),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Info
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.brand.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryPurple,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          product.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              product.formattedPrice,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primaryText,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                appState.addToCart(
+                                  product,
+                                  product.sizes.first,
+                                  product.colors.first,
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${product.name} masuk keranjang!'),
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryPurpleLight,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.add, size: 16, color: AppColors.primaryPurple),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+          );
+        },
+      ),
+    );
+  }
 
-            // New from UMKM Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'New from UMKM',
-                  style: GoogleFonts.fraunces(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryText,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightGreen,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Local Sellers',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: products.where((p) => !p.isOwned).length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final umkmProducts = products.where((p) => !p.isOwned).toList();
-                final p = umkmProducts[index];
-                return Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          p.image,
-                          width: 70,
-                          height: 70,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  p.seller,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primaryGreen,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
-                                Text(
-                                  ' ${p.rating}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.secondaryText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              p.name,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryText,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              p.formattedPrice,
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          appState.isSaved(p.id)
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_outline_rounded,
-                          color: appState.isSaved(p.id)
-                              ? AppColors.primaryGreen
-                              : AppColors.secondaryText,
-                        ),
-                        onPressed: () => appState.toggleSave(p.id),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
+  Widget _buildBrandChip(String brand, AppState appState) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: ActionChip(
+        label: Text(brand),
+        backgroundColor: AppColors.surface,
+        side: const BorderSide(color: AppColors.border),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primaryText,
         ),
+        onPressed: () {
+          appState.setDiscoverSearchQuery(brand);
+          appState.setTabIndex(1);
+        },
       ),
     );
   }

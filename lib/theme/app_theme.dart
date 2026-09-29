@@ -2,23 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  static const Color background = Color(0xFFF7F5F2);
-  static const Color primaryText = Color(0xFF141414);
-  static const Color secondaryText = Color(0xFF6F6B66);
-  static const Color primaryGreen = Color(0xFF2E6140);
-  static const Color lightGreen = Color(0xFFE7F0EA);
+  // Fitly Design System
+  static const Color background = Color(0xFFF7F3ED); // Warm Ivory
+  static const Color surface = Color(0xFFFFFFFF); // White
   static const Color card = Color(0xFFFFFFFF);
-  static const Color softSurface = Color(0xFFEFEDE9);
-  static const Color border = Color(0xFFE4E0DA);
+  static const Color softSurface = Color(0xFFF0ECE4); // Warm soft fill
+  static const Color border = Color(0xFFE8E3DC); // Soft Ivory Border
 
-  // Aliases for M3 compatibility
-  static const Color surface = background;
+  static const Color primaryPurple = Color(0xFF6C4CF6); // Fitly Purple
+  static const Color primaryPurpleDark = Color(0xFF5836E6);
+  static const Color primaryPurpleLight = Color(0xFFEFEAFF); // Purple tint container
+  static const Color aiGradientStart = Color(0xFF8B5CF6);
+  static const Color aiGradientEnd = Color(0xFF6C4CF6);
+
+  static const Color primaryText = Color(0xFF1F1C1A); // Charcoal
+  static const Color secondaryText = Color(0xFF77716A); // Muted Gray
+  static const Color tertiaryText = Color(0xFFA09B94);
+
+  static const Color success = Color(0xFF16A34A); // Soft Green
+  static const Color warning = Color(0xFFF97316); // Soft Orange
+  static const Color error = Color(0xFFEF4444); // Soft Red
+  static const Color discountBadge = Color(0xFFE11D48);
+
+  // Backward-compatibility aliases
+  static const Color primaryGreen = primaryPurple;
+  static const Color lightGreen = primaryPurpleLight;
+  static const Color primaryGreenLight = Color(0xFFDCFCE7);
+  static const Color ratingAmber = Color(0xFFF59E0B);
+  static const Color primary = primaryPurple;
+  static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color onSurface = primaryText;
   static const Color onSurfaceVariant = secondaryText;
-  static const Color primary = primaryGreen;
-  static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color primaryContainer = lightGreen;
-  static const Color onPrimaryContainer = primaryGreen;
+  static const Color primaryContainer = primaryPurpleLight;
+  static const Color onPrimaryContainer = primaryPurple;
+
+  static const LinearGradient purpleAiGradient = LinearGradient(
+    colors: [aiGradientStart, aiGradientEnd],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }
 
 class AppTheme {
@@ -27,30 +49,42 @@ class AppTheme {
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: const ColorScheme.light(
-        surface: AppColors.background,
+        surface: AppColors.surface,
         onSurface: AppColors.primaryText,
-        primary: AppColors.primaryGreen,
+        primary: AppColors.primaryPurple,
         onPrimary: Colors.white,
-        primaryContainer: AppColors.lightGreen,
-        onPrimaryContainer: AppColors.primaryGreen,
+        primaryContainer: AppColors.primaryPurpleLight,
+        onPrimaryContainer: AppColors.primaryPurple,
         secondary: AppColors.secondaryText,
         surfaceContainerLow: AppColors.softSurface,
         outline: AppColors.border,
+        error: AppColors.error,
       ),
       textTheme: TextTheme(
         headlineLarge: GoogleFonts.fraunces(
           fontSize: 32,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.primaryText,
           letterSpacing: -0.5,
         ),
         headlineMedium: GoogleFonts.fraunces(
           fontSize: 22,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.primaryText,
+          letterSpacing: -0.3,
         ),
         headlineSmall: GoogleFonts.fraunces(
           fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primaryText,
+        ),
+        titleLarge: GoogleFonts.inter(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryText,
+        ),
+        titleMedium: GoogleFonts.inter(
+          fontSize: 15,
           fontWeight: FontWeight.w600,
           color: AppColors.primaryText,
         ),
@@ -89,8 +123,43 @@ class AppTheme {
         iconTheme: const IconThemeData(color: AppColors.primaryText),
         titleTextStyle: GoogleFonts.fraunces(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.primaryText,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.card,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.border, width: 1),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryPurple,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primaryPurple,
+          side: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

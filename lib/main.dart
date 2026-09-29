@@ -22,7 +22,7 @@ class WardrobeSenseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Wardrobe Sense',
+      title: 'Fitly – AI Fashion Stylist',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const MainShellScreen(),

@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
+import 'discover_screen.dart';
+import 'ai_stylist_screen.dart';
 import 'wardrobe_screen.dart';
-import 'ai_start_screen.dart';
+import 'profile_screen.dart';
 import 'saved_screen.dart';
-import 'orders_screen.dart';
 import 'cart_screen.dart';
 
 class MainShellScreen extends StatelessWidget {
@@ -15,10 +16,10 @@ class MainShellScreen extends StatelessWidget {
 
   static const List<Widget> _screens = [
     HomeScreen(),
+    DiscoverScreen(),
+    AIStylistScreen(),
     WardrobeScreen(),
-    AIStartScreen(),
-    SavedScreen(),
-    OrdersScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -31,36 +32,53 @@ class MainShellScreen extends StatelessWidget {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: AppColors.lightGreen,
+                gradient: AppColors.purpleAiGradient,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
-                Icons.checkroom_rounded,
-                color: AppColors.primaryGreen,
-                size: 20,
+                Icons.auto_awesome,
+                color: Colors.white,
+                size: 18,
               ),
             ),
             const SizedBox(width: 10),
             Text(
-              'Wardrobe Sense',
+              'FITLY',
               style: GoogleFonts.fraunces(
                 color: AppColors.primaryText,
-                fontWeight: FontWeight.bold,
-                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                letterSpacing: 0.5,
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
+            icon: Icon(
+              appState.savedProductIds.isNotEmpty
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
+              color: appState.savedProductIds.isNotEmpty ? AppColors.discountBadge : AppColors.primaryText,
+            ),
+            tooltip: 'Wishlist',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SavedScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: Badge(
               label: Text('${appState.cartCount}'),
               isLabelVisible: appState.cartCount > 0,
-              backgroundColor: AppColors.primaryGreen,
+              backgroundColor: AppColors.primaryPurple,
               child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryText),
             ),
+            tooltip: 'Keranjang Belanja',
             onPressed: () {
               Navigator.push(
                 context,
@@ -77,40 +95,40 @@ class MainShellScreen extends StatelessWidget {
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          color: AppColors.card,
-          border: Border(top: BorderSide(color: AppColors.border)),
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: NavigationBar(
           selectedIndex: appState.currentTabIndex,
           onDestinationSelected: (idx) => appState.setTabIndex(idx),
-          backgroundColor: AppColors.card,
-          indicatorColor: AppColors.lightGreen,
+          backgroundColor: AppColors.surface,
+          indicatorColor: AppColors.primaryPurpleLight,
           elevation: 0,
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded, color: AppColors.primaryGreen),
+              selectedIcon: Icon(Icons.home_rounded, color: AppColors.primaryPurple),
               label: 'Home',
             ),
             NavigationDestination(
-              icon: Icon(Icons.checkroom_outlined),
-              selectedIcon: Icon(Icons.checkroom_rounded, color: AppColors.primaryGreen),
-              label: 'Wardrobe',
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore_rounded, color: AppColors.primaryPurple),
+              label: 'Discover',
             ),
             NavigationDestination(
               icon: Icon(Icons.auto_awesome_outlined),
-              selectedIcon: Icon(Icons.auto_awesome, color: AppColors.primaryGreen),
+              selectedIcon: Icon(Icons.auto_awesome, color: AppColors.primaryPurple),
               label: 'AI Stylist',
             ),
             NavigationDestination(
-              icon: Icon(Icons.bookmark_outline_rounded),
-              selectedIcon: Icon(Icons.bookmark_rounded, color: AppColors.primaryGreen),
-              label: 'Saved',
+              icon: Icon(Icons.checkroom_outlined),
+              selectedIcon: Icon(Icons.checkroom_rounded, color: AppColors.primaryPurple),
+              label: 'Wardrobe',
             ),
             NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long_rounded, color: AppColors.primaryGreen),
-              label: 'Orders',
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded, color: AppColors.primaryPurple),
+              label: 'Profile',
             ),
           ],
         ),
