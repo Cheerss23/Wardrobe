@@ -8,6 +8,7 @@ import 'package:wardrobe_sense/models/models.dart';
 import 'package:wardrobe_sense/providers/app_state.dart';
 import 'package:wardrobe_sense/screens/try_on_result_screen.dart';
 import 'package:wardrobe_sense/screens/try_with_wardrobe_screen.dart';
+import 'package:wardrobe_sense/screens/wardrobe_screen.dart';
 
 // 1x1 transparent png for test mocks
 final List<int> _transparentImage = [
@@ -156,6 +157,42 @@ void main() {
 
     expect(find.text('Your Outfit'), findsOneWidget);
     expect(find.text('NEW'), findsOneWidget);
+  });
+
+  testWidgets('WardrobeScreen renders owned pieces, Saran Outfit Hari Ini, and Outfit Builder', (WidgetTester tester) async {
+    final appState = AppState();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: appState,
+        child: const MaterialApp(
+          home: WardrobeScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    // Verify Title
+    expect(find.text('Digital Wardrobe'), findsOneWidget);
+
+    // Verify Tab Switcher: "Pakaian Saya" vs "Cari di Toko / Katalog"
+    expect(find.textContaining('Pakaian Saya'), findsOneWidget);
+    expect(find.text('Cari di Toko / Katalog'), findsOneWidget);
+
+    // Verify Saran Outfit Hari Ini
+    expect(find.text('Saran Outfit Hari Ini'), findsOneWidget);
+    expect(find.text('Coba Outfit Hari Ini'), findsOneWidget);
+
+    // Verify Outfit Builder (Susun Outfit Kamu)
+    expect(find.text('Susun Outfit Kamu'), findsOneWidget);
+    expect(find.text('Coba Outfit Ini'), findsOneWidget);
+
+    // Verify tab switching to store catalog discovery
+    await tester.tap(find.text('Cari di Toko / Katalog'));
+    await tester.pump();
+
+    expect(find.textContaining('Cari produk baru'), findsOneWidget);
   });
 }
 
