@@ -4,11 +4,11 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
-import 'product_detail_screen.dart';
 import 'shop_this_look_screen.dart';
 import 'cart_screen.dart';
 import 'saved_screen.dart';
 import 'try_on_studio_screen.dart';
+import '../widgets/product_catalog_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -657,7 +657,7 @@ class HomeScreen extends StatelessWidget {
     AppState appState,
   ) {
     return SizedBox(
-      height: 250,
+      height: 285,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
@@ -665,164 +665,9 @@ class HomeScreen extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
           final product = items[index];
-          final isSaved = appState.isSaved(product.id);
-
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProductDetailScreen(product: product),
-                ),
-              );
-            },
-            child: Container(
-              width: 160,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image with badges
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
-                        child: AspectRatio(
-                          aspectRatio: 1.1,
-                          child: Image.network(
-                            product.image,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: AppColors.softSurface,
-                              child: const Icon(Icons.image),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (product.matchPercentage != null)
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryPurple,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.auto_awesome, color: Colors.white, size: 10),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '${product.matchPercentage}%',
-                                  style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            iconSize: 16,
-                            padding: const EdgeInsets.all(5),
-                            constraints: const BoxConstraints(),
-                            icon: Icon(
-                              isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                              color: isSaved ? AppColors.discountBadge : AppColors.secondaryText,
-                            ),
-                            onPressed: () => appState.toggleSave(product.id),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Info
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.brand.toUpperCase(),
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryPurple,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          product.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryText,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              product.formattedPrice,
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primaryText,
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                appState.addToCart(
-                                  product,
-                                  product.sizes.first,
-                                  product.colors.first,
-                                );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('${product.name} masuk keranjang!'),
-                                    duration: const Duration(seconds: 1),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryPurpleLight,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.add, size: 16, color: AppColors.primaryPurple),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          return ProductCatalogCard(
+            product: product,
+            width: 165,
           );
         },
       ),

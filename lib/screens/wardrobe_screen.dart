@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
-import 'product_detail_screen.dart';
-import 'try_with_wardrobe_screen.dart';
 import 'try_on_processing_screen.dart';
 
 class WardrobeScreen extends StatefulWidget {
@@ -16,18 +14,9 @@ class WardrobeScreen extends StatefulWidget {
 }
 
 class _WardrobeScreenState extends State<WardrobeScreen> {
-  // Navigation mode: 0 = Pakaian Saya (Owned - Priority), 1 = Cari di Katalog (Explore Alternatives)
-  int _selectedViewTab = 0;
-
   // Filter category for owned wardrobe
   String _selectedWardrobeCategory = 'All';
   final List<String> _wardrobeCategories = ['All', 'Tops', 'Bottoms', 'Shoes', 'Accessories'];
-
-  // Filter category for catalog discovery
-  String _selectedCatalogCategory = 'All';
-  final List<String> _catalogCategories = ['All', 'Tops', 'Bottoms', 'Outerwear', 'Shoes', 'Accessories'];
-  String _catalogSearchQuery = '';
-  final TextEditingController _catalogSearchController = TextEditingController();
 
   // Outfit Builder Slots (User can assemble outfit to try on)
   WardrobePiece? _builderTop;
@@ -48,12 +37,6 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         _applySuggestionToBuilder(_todaySuggestionIndex, appState);
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _catalogSearchController.dispose();
-    super.dispose();
   }
 
   // Preset outfit suggestions created exclusively from user's owned clothes
@@ -450,120 +433,13 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Switcher / Menu Tabs: "Pakaian Saya" (Prioritized) vs "Cari di Toko / Katalog"
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedViewTab = 0),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: _selectedViewTab == 0 ? AppColors.primaryPurple : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: _selectedViewTab == 0
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primaryPurple.withValues(alpha: 0.25),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.checkroom_rounded,
-                              size: 17,
-                              color: _selectedViewTab == 0 ? Colors.white : AppColors.secondaryText,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Pakaian Saya (${appState.wardrobe.length})',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: _selectedViewTab == 0 ? Colors.white : AppColors.secondaryText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedViewTab = 1),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: _selectedViewTab == 1 ? AppColors.primaryPurple : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: _selectedViewTab == 1
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primaryPurple.withValues(alpha: 0.25),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.storefront_rounded,
-                              size: 17,
-                              color: _selectedViewTab == 1 ? Colors.white : AppColors.secondaryText,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Cari di Toko / Katalog',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: _selectedViewTab == 1 ? Colors.white : AppColors.secondaryText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Tab Content
-            Expanded(
-              child: _selectedViewTab == 0
-                  ? _buildOwnedWardrobeView(context, appState)
-                  : _buildCatalogDiscoveryView(context, appState),
-            ),
-          ],
-        ),
+        child: _buildOwnedWardrobeView(context, appState),
       ),
     );
   }
 
   // =========================================================================
-  // VIEW 1: PAKAIAN SAYA (PRIORITIZED OWNED WARDROBE + BUILDER + TODAY'S SUGGESTION)
+  // VIEW: PAKAIAN SAYA (PRIORITIZED OWNED WARDROBE + BUILDER + TODAY'S SUGGESTION)
   // =========================================================================
   Widget _buildOwnedWardrobeView(BuildContext context, AppState appState) {
     final filteredItems = _selectedWardrobeCategory == 'All'
@@ -576,7 +452,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
-        // 1. SARAN OUTFIT HARI INI (REPLACES "COMPLETE MY LOOK")
+        // 1. SARAN OUTFIT HARI INI
         _buildTodayOutfitSuggestionCard(context, appState, todaySuggestion),
 
         const SizedBox(height: 20),
@@ -590,23 +466,26 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Koleksi Pakaian Kamu',
-                  style: GoogleFonts.fraunces(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryText,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Koleksi Pakaian Kamu',
+                    style: GoogleFonts.fraunces(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryText,
+                    ),
                   ),
-                ),
-                Text(
-                  'Prioritas pakaian yang sudah kamu miliki di lemari',
-                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.secondaryText),
-                ),
-              ],
+                  Text(
+                    'Prioritas pakaian yang sudah kamu miliki (${appState.wardrobe.length} pakaian)',
+                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.secondaryText),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: () => _showAddClothingModal(context, appState),
               icon: const Icon(Icons.add, size: 15, color: AppColors.primaryPurple),
@@ -1402,282 +1281,6 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  // =========================================================================
-  // VIEW 2: CARI DI TOKO / KATALOG (EXPLORE ALTERNATIVES)
-  // =========================================================================
-  Widget _buildCatalogDiscoveryView(BuildContext context, AppState appState) {
-    final query = _catalogSearchQuery.toLowerCase().trim();
-    final products = appState.products.where((p) {
-      final matchesCategory = _selectedCatalogCategory == 'All' || p.category == _selectedCatalogCategory;
-      final matchesQuery = query.isEmpty ||
-          p.name.toLowerCase().contains(query) ||
-          p.brand.toLowerCase().contains(query) ||
-          p.category.toLowerCase().contains(query);
-      return matchesCategory && matchesQuery;
-    }).toList();
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      children: [
-        // Search bar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.search, color: AppColors.secondaryText, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _catalogSearchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Cari produk baru untuk dipadukan...',
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onChanged: (val) {
-                    setState(() {
-                      _catalogSearchQuery = val;
-                    });
-                  },
-                ),
-              ),
-              if (_catalogSearchQuery.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
-                  onPressed: () {
-                    _catalogSearchController.clear();
-                    setState(() => _catalogSearchQuery = '');
-                  },
-                ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // Catalog Category Chips
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _catalogCategories.map((cat) {
-              final isSelected = _selectedCatalogCategory == cat;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(cat),
-                  selected: isSelected,
-                  onSelected: (val) {
-                    setState(() {
-                      _selectedCatalogCategory = cat;
-                    });
-                  },
-                  selectedColor: AppColors.primaryPurple,
-                  backgroundColor: AppColors.surface,
-                  labelStyle: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? Colors.white : AppColors.primaryText,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                      color: isSelected ? AppColors.primaryPurple : AppColors.border,
-                    ),
-                  ),
-                  showCheckmark: false,
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Helper header note
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.primaryPurpleLight.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.auto_awesome, size: 16, color: AppColors.primaryPurple),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Coba langsung produk toko ini bersama pakaian yang sudah kamu miliki di lemari.',
-                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.primaryPurpleDark),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Product Catalog Grid
-        if (products.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            child: Center(
-              child: Text(
-                'Tidak ada produk yang cocok dengan pencarian.',
-                style: GoogleFonts.inter(color: AppColors.secondaryText),
-              ),
-            ),
-          )
-        else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: products.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 0.65,
-            ),
-            itemBuilder: (context, index) {
-              final product = products[index];
-              final matchPercentage = product.matchPercentage ?? 94;
-
-              return Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
-                          child: Image.network(
-                            product.image,
-                            height: 125,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryPurple,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '$matchPercentage% Match',
-                              style: GoogleFonts.inter(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product.brand,
-                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.secondaryText),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            product.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            product.formattedPrice,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryPurple,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          // CTA: Try with Wardrobe
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => TryWithWardrobeScreen(product: product),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.auto_awesome, size: 12, color: Colors.white),
-                              label: Text(
-                                'Coba dgn Lemari',
-                                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryPurple,
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          // Detail button
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ProductDetailScreen(product: product),
-                                  ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppColors.border),
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: Text(
-                                'Lihat Detail',
-                                style: GoogleFonts.inter(fontSize: 10, color: AppColors.primaryText),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-
-        const SizedBox(height: 36),
-      ],
     );
   }
 }

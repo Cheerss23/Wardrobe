@@ -9,6 +9,7 @@ import 'package:wardrobe_sense/providers/app_state.dart';
 import 'package:wardrobe_sense/screens/try_on_result_screen.dart';
 import 'package:wardrobe_sense/screens/try_with_wardrobe_screen.dart';
 import 'package:wardrobe_sense/screens/wardrobe_screen.dart';
+import 'package:wardrobe_sense/screens/discover_screen.dart';
 
 // 1x1 transparent png for test mocks
 final List<int> _transparentImage = [
@@ -176,10 +177,6 @@ void main() {
     // Verify Title
     expect(find.text('Digital Wardrobe'), findsOneWidget);
 
-    // Verify Tab Switcher: "Pakaian Saya" vs "Cari di Toko / Katalog"
-    expect(find.textContaining('Pakaian Saya'), findsOneWidget);
-    expect(find.text('Cari di Toko / Katalog'), findsOneWidget);
-
     // Verify Saran Outfit Hari Ini
     expect(find.text('Saran Outfit Hari Ini'), findsOneWidget);
     expect(find.text('Coba Outfit Hari Ini'), findsOneWidget);
@@ -188,11 +185,32 @@ void main() {
     expect(find.text('Susun Outfit Kamu'), findsOneWidget);
     expect(find.text('Coba Outfit Ini'), findsOneWidget);
 
-    // Verify tab switching to store catalog discovery
-    await tester.tap(find.text('Cari di Toko / Katalog'));
+    // Scroll down to see Owned Wardrobe collection
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
     await tester.pump();
 
-    expect(find.textContaining('Cari produk baru'), findsOneWidget);
+    // Verify Owned Wardrobe collection
+    expect(find.text('Koleksi Pakaian Kamu'), findsOneWidget);
+    expect(find.text('MILIK SAYA'), findsWidgets);
+  });
+
+  testWidgets('DiscoverScreen renders ProductCatalogCard with Coba dgn Lemari and Lihat Detail', (WidgetTester tester) async {
+    final appState = AppState();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: appState,
+        child: const MaterialApp(
+          home: DiscoverScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    // Verify ProductCatalogCard elements are rendered
+    expect(find.text('Coba dgn Lemari'), findsWidgets);
+    expect(find.text('Lihat Detail'), findsWidgets);
   });
 }
 
