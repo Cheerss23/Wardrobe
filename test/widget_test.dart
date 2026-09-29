@@ -179,14 +179,20 @@ void main() {
 
     // Verify Saran Outfit Hari Ini
     expect(find.text('Saran Outfit Hari Ini'), findsOneWidget);
+    expect(find.text('100% Lemari Saya'), findsOneWidget);
+    expect(find.text('Padukan dgn Katalog'), findsOneWidget);
     expect(find.text('Coba Outfit Hari Ini'), findsOneWidget);
+
+    // Scroll down to see Outfit Builder
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
+    await tester.pump();
 
     // Verify Outfit Builder (Susun Outfit Kamu)
     expect(find.text('Susun Outfit Kamu'), findsOneWidget);
     expect(find.text('Coba Outfit Ini'), findsOneWidget);
 
     // Scroll down to see Owned Wardrobe collection
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
     await tester.pump();
 
     // Verify Owned Wardrobe collection

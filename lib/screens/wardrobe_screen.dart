@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import 'product_detail_screen.dart';
 import 'try_on_processing_screen.dart';
 
 class WardrobeScreen extends StatefulWidget {
@@ -14,18 +15,25 @@ class WardrobeScreen extends StatefulWidget {
 }
 
 class _WardrobeScreenState extends State<WardrobeScreen> {
-  // Filter category for owned wardrobe
+  // Filter category for owned wardrobe grid
   String _selectedWardrobeCategory = 'All';
   final List<String> _wardrobeCategories = ['All', 'Tops', 'Bottoms', 'Shoes', 'Accessories'];
+
+  // Preferences for Today's Outfit Suggestion
+  bool _useCatalogItems = false; // false = Hanya Lemari Saya, true = Padukan dgn Katalog Toko
+  String _suggestionOccasion = 'Semua Acara';
+  final List<String> _occasions = ['Semua Acara', 'Campus', 'Office', 'Date', 'Hangout', 'Formal'];
+  String _suggestionStyle = 'Semua Gaya';
+  final List<String> _styles = ['Semua Gaya', 'Smart Casual', 'Casual', 'Streetwear', 'Minimal', 'Korean'];
+
+  // Outfit suggestion cycle index
+  int _todaySuggestionIndex = 0;
 
   // Outfit Builder Slots (User can assemble outfit to try on)
   WardrobePiece? _builderTop;
   WardrobePiece? _builderBottom;
   WardrobePiece? _builderShoes;
   WardrobePiece? _builderAccessory;
-
-  // Today's outfit suggestion cycle index
-  int _todaySuggestionIndex = 0;
 
   @override
   void initState() {
@@ -34,83 +42,239 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = Provider.of<AppState>(context, listen: false);
       if (appState.wardrobe.isNotEmpty) {
-        _applySuggestionToBuilder(_todaySuggestionIndex, appState);
+        _applyCurrentSuggestionToBuilder(appState);
       }
     });
   }
 
-  // Preset outfit suggestions created exclusively from user's owned clothes
-  List<Map<String, dynamic>> _getTodaySuggestions(AppState appState) {
+  // Preset outfit suggestions covering different occasions, styles, and source modes (Wardrobe-only vs Wardrobe + Catalog)
+  List<Map<String, dynamic>> _getAllSuggestions(AppState appState) {
     final wardrobe = appState.wardrobe;
-    final top1 = wardrobe.firstWhere((w) => w.id == 'w_top1', orElse: () => wardrobe[0]);
-    final top2 = wardrobe.firstWhere((w) => w.id == 'w_top2', orElse: () => wardrobe[0]);
-    final top3 = wardrobe.firstWhere((w) => w.id == 'w_top3', orElse: () => wardrobe[0]);
+    final top1 = wardrobe.firstWhere((w) => w.id == 'w_top1', orElse: () => wardrobe[0]); // White Shirt
+    final top2 = wardrobe.firstWhere((w) => w.id == 'w_top2', orElse: () => wardrobe[0]); // Black Tee
+    final top3 = wardrobe.firstWhere((w) => w.id == 'w_top3', orElse: () => wardrobe[0]); // Beige Shirt
 
-    final bot1 = wardrobe.firstWhere((w) => w.id == 'w_bot1', orElse: () => wardrobe[3]);
-    final bot2 = wardrobe.firstWhere((w) => w.id == 'w_bot2', orElse: () => wardrobe[4]);
-    final bot3 = wardrobe.firstWhere((w) => w.id == 'w_bot3', orElse: () => wardrobe[5]);
+    final bot1 = wardrobe.firstWhere((w) => w.id == 'w_bot1', orElse: () => wardrobe[3]); // Black Pants
+    final bot2 = wardrobe.firstWhere((w) => w.id == 'w_bot2', orElse: () => wardrobe[4]); // Blue Jeans
+    final bot3 = wardrobe.firstWhere((w) => w.id == 'w_bot3', orElse: () => wardrobe[5]); // Beige Chinos
 
-    final shoe1 = wardrobe.firstWhere((w) => w.id == 'w_shoe1', orElse: () => wardrobe[6]);
-    final shoe2 = wardrobe.firstWhere((w) => w.id == 'w_shoe2', orElse: () => wardrobe[7]);
+    final shoe1 = wardrobe.firstWhere((w) => w.id == 'w_shoe1', orElse: () => wardrobe[6]); // White Sneakers
+    final shoe2 = wardrobe.firstWhere((w) => w.id == 'w_shoe2', orElse: () => wardrobe[7]); // Black Sneakers
 
-    final acc1 = wardrobe.firstWhere((w) => w.id == 'w_acc1', orElse: () => wardrobe[8]);
-    final acc2 = wardrobe.firstWhere((w) => w.id == 'w_acc2', orElse: () => wardrobe[9]);
+    final acc1 = wardrobe.firstWhere((w) => w.id == 'w_acc1', orElse: () => wardrobe[8]); // Black Watch
+    final acc2 = wardrobe.firstWhere((w) => w.id == 'w_acc2', orElse: () => wardrobe[9]); // Crossbody Bag
+
+    // Catalog items for mix & match
+    final pJacket = appState.products.firstWhere((p) => p.id == 'p_jacket', orElse: () => appState.products[0]);
+    final pCardigan = appState.products.firstWhere((p) => p.id == 'p7', orElse: () => appState.products[0]);
+    final pDenim = appState.products.firstWhere((p) => p.id == 'p4', orElse: () => appState.products[0]);
+    final pChunkyShoes = appState.products.firstWhere((p) => p.id == 'p8', orElse: () => appState.products[0]);
+    final pPleatedTrousers = appState.products.firstWhere((p) => p.id == 'p6', orElse: () => appState.products[1]);
 
     return [
+      // ==================== MODE: HANYA LEMARI SAYA ====================
       {
-        'title': 'Smart Casual Minimalist',
-        'weather': '28°C Cerah • Sejuk & Breathable',
-        'vibe': 'Kantor, Kuliah & Pertemuan Rapi',
+        'title': 'Office Smart-Casual Clean',
+        'weather': '28°C Cerah • Sejuk & Rapi',
+        'occasion': 'Office',
+        'style': 'Smart Casual',
         'matchScore': 98,
         'description':
-            'Kemeja putih katun oversized dipadukan dengan celana straight hitam dan sneakers putih. Tampilan rapi, adem, dan timeless untuk cuaca hari ini.',
+            '100% dari lemarimu. Kemeja putih katun oversized dipadukan celana straight hitam dan jam tangan minimalis. Tampilan formal yang tetap nyaman & modern.',
+        'isCatalogMix': false,
         'top': top1,
         'bottom': bot1,
         'shoes': shoe1,
         'accessory': acc1,
+        'catalogProduct': null,
       },
       {
-        'title': 'Urban Streetwear Relaxed',
-        'weather': '28°C Cerah • Gaya Santai Fleksibel',
-        'vibe': 'Hangout Kafe & Jalan Sore',
+        'title': 'Campus Fresh Everyday',
+        'weather': '28°C Cerah • Ringan & Fleksibel',
+        'occasion': 'Campus',
+        'style': 'Casual',
+        'matchScore': 97,
+        'description':
+            '100% dari lemarimu. Paduan kemeja santai, celana blue jeans, dan crossbody bag yang pas untuk mobilitas tinggi di kampus.',
+        'isCatalogMix': false,
+        'top': top1,
+        'bottom': bot2,
+        'shoes': shoe1,
+        'accessory': acc2,
+        'catalogProduct': null,
+      },
+      {
+        'title': 'Streetwear Cafe Hangout',
+        'weather': '28°C Cerah • Santai & Nyaman',
+        'occasion': 'Hangout',
+        'style': 'Streetwear',
         'matchScore': 96,
         'description':
-            'Kaos hitam combed tebal bersama celana blue jeans dan sneakers hitam. Siluet santai yang pas untuk mobilitas tinggi dan kenyamanan maksimal.',
+            '100% dari lemarimu. Kaos combed hitam berpadu celana blue jeans dan sneakers hitam. Siluet santai yang pas untuk hangout kafe.',
         'top': top2,
         'bottom': bot2,
         'shoes': shoe2,
         'accessory': acc2,
+        'catalogProduct': null,
       },
       {
-        'title': 'Earthy Monochrome Casual',
+        'title': 'Earthy Minimalist Date',
         'weather': '28°C Cerah • Hangat & Estetik',
-        'vibe': 'Date Santai & Weekend Vibe',
+        'occasion': 'Date',
+        'style': 'Minimal',
         'matchScore': 95,
         'description':
-            'Kemeja beige berpadu selaras dengan chinos beige dan aksen jam hitam. Perpaduan earth tone yang memberi kesan hangat dan bersih.',
+            '100% dari lemarimu. Kemeja beige berpadu selaras dengan chinos beige dan jam hitam. Palet earth tone monokromatik yang hangat dan bersih.',
         'top': top3,
         'bottom': bot3,
         'shoes': shoe1,
         'accessory': acc1,
+        'catalogProduct': null,
+      },
+      {
+        'title': 'Monochrome Formal Evening',
+        'weather': '28°C Cerah • Rapi & Berwibawa',
+        'occasion': 'Formal',
+        'style': 'Smart Casual',
+        'matchScore': 95,
+        'description':
+            '100% dari lemarimu. Kontras hitam-putih tegas dengan kemeja putih rapi dan celana straight hitam untuk acara semi-formal malam hari.',
+        'top': top1,
+        'bottom': bot1,
+        'shoes': shoe2,
+        'accessory': acc1,
+        'catalogProduct': null,
+      },
+      {
+        'title': 'Korean Minimalist Stroll',
+        'weather': '28°C Cerah • Santai Elegan',
+        'occasion': 'Hangout',
+        'style': 'Korean',
+        'matchScore': 94,
+        'description':
+            '100% dari lemarimu. Siluet kemeja beige santai dengan celana straight hitam dan sneakers putih ala tren kasual Korea.',
+        'top': top3,
+        'bottom': bot1,
+        'shoes': shoe1,
+        'accessory': acc1,
+        'catalogProduct': null,
+      },
+
+      // ==================== MODE: PADUKAN DGN KATALOG TOKO ====================
+      {
+        'title': 'Layered Smart Tailored Look',
+        'weather': '28°C Cerah • Elegan Berstruktur',
+        'occasion': 'Office',
+        'style': 'Smart Casual',
+        'matchScore': 98,
+        'description':
+            'Padukan kemeja putih & celana hitam lemarimu dengan Black Oversized Jacket dari katalog untuk siluet blazer yang berwibawa di kantor.',
+        'isCatalogMix': true,
+        'top': top1,
+        'bottom': bot1,
+        'shoes': shoe1,
+        'accessory': acc1,
+        'catalogProduct': pJacket,
+      },
+      {
+        'title': 'Korean Cozy Layer Look',
+        'weather': '28°C Cerah • Hangat & Santai',
+        'occasion': 'Campus',
+        'style': 'Korean',
+        'matchScore': 97,
+        'description':
+            'Tambahkan Chunky Knit Cardigan sage green dari katalog ke kaos hitam & celana jeans lemarimu untuk gaya hangat ala kampus Seoul.',
+        'isCatalogMix': true,
+        'top': top2,
+        'bottom': bot2,
+        'shoes': shoe1,
+        'accessory': acc2,
+        'catalogProduct': pCardigan,
+      },
+      {
+        'title': 'Chunky Urban Streetwear',
+        'weather': '28°C Cerah • Bold & Bervolume',
+        'occasion': 'Hangout',
+        'style': 'Streetwear',
+        'matchScore': 96,
+        'description':
+            'Tingkatkan koleksi lemarimu dengan Retro Chunky Leather Sneakers dari katalog agar siluet streetwear lebih bervolume dan standout.',
+        'isCatalogMix': true,
+        'top': top2,
+        'bottom': bot1,
+        'shoes': shoe2,
+        'accessory': acc2,
+        'catalogProduct': pChunkyShoes,
+      },
+      {
+        'title': 'Sophisticated Earth Minimal',
+        'weather': '28°C Cerah • Tekstur Mewah',
+        'occasion': 'Date',
+        'style': 'Minimal',
+        'matchScore': 96,
+        'description':
+            'Padukan kemeja beige lemarimu dengan Structured Pleated Trousers dari katalog untuk tekstur lipit mewah yang memikat saat kencan.',
+        'isCatalogMix': true,
+        'top': top3,
+        'bottom': bot3,
+        'shoes': shoe1,
+        'accessory': acc1,
+        'catalogProduct': pPleatedTrousers,
+      },
+      {
+        'title': 'Vintage Statement Party Look',
+        'weather': '28°C Cerah • Edgy & Berkarakter',
+        'occasion': 'Formal',
+        'style': 'Casual',
+        'matchScore': 95,
+        'description':
+            'Sempurnakan kaos hitam & celana hitam lemarimu dengan Vintage Trucker Denim Jacket dari katalog untuk statement look yang berkarakter.',
+        'isCatalogMix': true,
+        'top': top2,
+        'bottom': bot1,
+        'shoes': shoe2,
+        'accessory': acc1,
+        'catalogProduct': pDenim,
       },
     ];
   }
 
-  void _applySuggestionToBuilder(int index, AppState appState) {
-    final suggestions = _getTodaySuggestions(appState);
-    final target = suggestions[index % suggestions.length];
+  // Get filtered suggestions according to active filters (Source mode, Occasion, Style)
+  List<Map<String, dynamic>> _getFilteredSuggestions(AppState appState) {
+    final all = _getAllSuggestions(appState);
+    final filtered = all.where((s) {
+      final matchesSource = s['isCatalogMix'] == _useCatalogItems;
+      final matchesOccasion = _suggestionOccasion == 'Semua Acara' || s['occasion'] == _suggestionOccasion;
+      final matchesStyle = _suggestionStyle == 'Semua Gaya' || s['style'] == _suggestionStyle;
+      return matchesSource && matchesOccasion && matchesStyle;
+    }).toList();
+
+    if (filtered.isNotEmpty) return filtered;
+
+    // Fallback: If no exact match for both occasion and style, filter by source mode only
+    final sourceFiltered = all.where((s) => s['isCatalogMix'] == _useCatalogItems).toList();
+    return sourceFiltered.isNotEmpty ? sourceFiltered : all;
+  }
+
+  Map<String, dynamic> _getCurrentSuggestion(AppState appState) {
+    final list = _getFilteredSuggestions(appState);
+    return list[_todaySuggestionIndex % list.length];
+  }
+
+  void _applyCurrentSuggestionToBuilder(AppState appState) {
+    final suggestion = _getCurrentSuggestion(appState);
     setState(() {
-      _builderTop = target['top'] as WardrobePiece?;
-      _builderBottom = target['bottom'] as WardrobePiece?;
-      _builderShoes = target['shoes'] as WardrobePiece?;
-      _builderAccessory = target['accessory'] as WardrobePiece?;
+      _builderTop = suggestion['top'] as WardrobePiece?;
+      _builderBottom = suggestion['bottom'] as WardrobePiece?;
+      _builderShoes = suggestion['shoes'] as WardrobePiece?;
+      _builderAccessory = suggestion['accessory'] as WardrobePiece?;
     });
   }
 
   void _cycleNextSuggestion(AppState appState) {
-    final suggestions = _getTodaySuggestions(appState);
+    final list = _getFilteredSuggestions(appState);
     setState(() {
-      _todaySuggestionIndex = (_todaySuggestionIndex + 1) % suggestions.length;
+      _todaySuggestionIndex = (_todaySuggestionIndex + 1) % list.length;
     });
   }
 
@@ -187,7 +351,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       MaterialPageRoute(
         builder: (_) => TryOnProcessingScreen(
           selectedWardrobe: pieces,
-          occasion: 'Outfit Pilihan Saya',
+          occasion: _suggestionOccasion == 'Semua Acara' ? 'Outfit Pilihan Saya' : _suggestionOccasion,
           fitScore: 97,
           reasons: const [
             'Kombinasi hasil rancangan personal dari koleksi lemarimu',
@@ -446,14 +610,13 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         ? appState.wardrobe
         : appState.wardrobe.where((w) => w.category == _selectedWardrobeCategory).toList();
 
-    final suggestions = _getTodaySuggestions(appState);
-    final todaySuggestion = suggestions[_todaySuggestionIndex % suggestions.length];
+    final currentSuggestion = _getCurrentSuggestion(appState);
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
-        // 1. SARAN OUTFIT HARI INI
-        _buildTodayOutfitSuggestionCard(context, appState, todaySuggestion),
+        // 1. SARAN OUTFIT HARI INI (DENGAN FILTER ACARA, STYLE, DAN PILIHAN SUMBER WARDROBE / KATALOG)
+        _buildTodayOutfitSuggestionCard(context, appState, currentSuggestion),
 
         const SizedBox(height: 20),
 
@@ -568,18 +731,26 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   }
 
   // -------------------------------------------------------------------------
-  // CARD: SARAN OUTFIT HARI INI
+  // CARD: SARAN OUTFIT HARI INI (DENGAN FILTER ACARA, STYLE, DAN PILIHAN SUMBER WARDROBE / KATALOG)
   // -------------------------------------------------------------------------
   Widget _buildTodayOutfitSuggestionCard(
     BuildContext context,
     AppState appState,
     Map<String, dynamic> suggestion,
   ) {
-    final top = suggestion['top'] as WardrobePiece;
-    final bottom = suggestion['bottom'] as WardrobePiece;
-    final shoes = suggestion['shoes'] as WardrobePiece;
-    final accessory = suggestion['accessory'] as WardrobePiece;
-    final comboPieces = [top, bottom, shoes, accessory];
+    final top = suggestion['top'] as WardrobePiece?;
+    final bottom = suggestion['bottom'] as WardrobePiece?;
+    final shoes = suggestion['shoes'] as WardrobePiece?;
+    final accessory = suggestion['accessory'] as WardrobePiece?;
+    final catalogProduct = suggestion['catalogProduct'] as ProductItem?;
+    final isCatalogMix = suggestion['isCatalogMix'] as bool? ?? false;
+
+    // Owned pieces used in this look
+    final ownedComboPieces = <WardrobePiece>[];
+    if (top != null) ownedComboPieces.add(top);
+    if (bottom != null) ownedComboPieces.add(bottom);
+    if (shoes != null) ownedComboPieces.add(shoes);
+    if (accessory != null) ownedComboPieces.add(accessory);
 
     return Container(
       decoration: BoxDecoration(
@@ -660,6 +831,213 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ==================== PILIHAN SUMBER OUTFIT: LEMARI VS KATALOG ====================
+                Text(
+                  'Sumber Pakaian:',
+                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondaryText),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            if (_useCatalogItems) {
+                              setState(() {
+                                _useCatalogItems = false;
+                                _todaySuggestionIndex = 0;
+                              });
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 7),
+                            decoration: BoxDecoration(
+                              color: !_useCatalogItems ? AppColors.primaryPurple : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.checkroom_rounded,
+                                  size: 14,
+                                  color: !_useCatalogItems ? Colors.white : AppColors.secondaryText,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '100% Lemari Saya',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: !_useCatalogItems ? Colors.white : AppColors.secondaryText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            if (!_useCatalogItems) {
+                              setState(() {
+                                _useCatalogItems = true;
+                                _todaySuggestionIndex = 0;
+                              });
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 7),
+                            decoration: BoxDecoration(
+                              color: _useCatalogItems ? AppColors.primaryPurple : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 13,
+                                  color: _useCatalogItems ? Colors.white : AppColors.secondaryText,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'Padukan dgn Katalog',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: _useCatalogItems ? Colors.white : AppColors.secondaryText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ==================== PILIHAN ACARA / OCCASION ====================
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Acara yang Dikunjungi:',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondaryText),
+                    ),
+                    Text(
+                      _suggestionOccasion,
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _occasions.map((occ) {
+                      final isSelected = _suggestionOccasion == occ;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          label: Text(occ),
+                          selected: isSelected,
+                          onSelected: (val) {
+                            setState(() {
+                              _suggestionOccasion = occ;
+                              _todaySuggestionIndex = 0;
+                            });
+                          },
+                          selectedColor: AppColors.primaryPurple,
+                          backgroundColor: AppColors.background,
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? Colors.white : AppColors.primaryText,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isSelected ? AppColors.primaryPurple : AppColors.border,
+                            ),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          showCheckmark: false,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // ==================== PILIHAN STYLE / GAYA ====================
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Gaya Fashion (Style):',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondaryText),
+                    ),
+                    Text(
+                      _suggestionStyle,
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _styles.map((st) {
+                      final isSelected = _suggestionStyle == st;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          label: Text(st),
+                          selected: isSelected,
+                          onSelected: (val) {
+                            setState(() {
+                              _suggestionStyle = st;
+                              _todaySuggestionIndex = 0;
+                            });
+                          },
+                          selectedColor: AppColors.primaryPurple,
+                          backgroundColor: AppColors.background,
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? Colors.white : AppColors.primaryText,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isSelected ? AppColors.primaryPurple : AppColors.border,
+                            ),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          showCheckmark: false,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+                const Divider(height: 24, color: AppColors.border),
+
                 // Weather and occasion subtitle
                 Row(
                   children: [
@@ -667,16 +1045,32 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                     const SizedBox(width: 4),
                     Text(
                       suggestion['weather'] as String,
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.secondaryText),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.secondaryText),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isCatalogMix ? AppColors.primaryPurpleLight : AppColors.primaryGreenLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        isCatalogMix ? 'LEMARI + PRODUK KATALOG' : '100% LEMARI SAYA',
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: isCatalogMix ? AppColors.primaryPurple : AppColors.primaryGreen,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   suggestion['title'] as String,
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryText),
+                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryText),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   suggestion['description'] as String,
                   style: GoogleFonts.inter(fontSize: 12, color: AppColors.secondaryText, height: 1.35),
@@ -684,52 +1078,133 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
                 const SizedBox(height: 14),
 
-                // Thumbnails of owned pieces in this look
+                // ==================== PREVIEW ITEM OUTFIT ====================
                 Row(
-                  children: comboPieces.map((piece) {
-                    return Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                piece.image,
-                                height: 50,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
+                  children: [
+                    // Wardrobe Owned Pieces
+                    ...ownedComboPieces.map((piece) {
+                      return Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  piece.image,
+                                  height: 50,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGreenLight,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'LEMARI',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                piece.name,
+                                style: GoogleFonts.inter(fontSize: 9, color: AppColors.primaryText),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+
+                    // Recommended Catalog Product (if mix mode)
+                    if (isCatalogMix && catalogProduct != null)
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ProductDetailScreen(product: catalogProduct),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryPurpleLight.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.primaryPurple, width: 1.5),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              piece.category,
-                              style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.primaryPurple),
-                              maxLines: 1,
+                            child: Column(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    catalogProduct.image,
+                                    height: 50,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryPurple,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'DARI KATALOG',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  catalogProduct.name,
+                                  style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primaryText),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  catalogProduct.formattedPrice,
+                                  style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
+                                  maxLines: 1,
+                                ),
+                              ],
                             ),
-                            Text(
-                              piece.name,
-                              style: GoogleFonts.inter(fontSize: 9, color: AppColors.primaryText),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    );
-                  }).toList(),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
 
-                // Actions: "Coba Outfit Hari Ini" & "Pasang ke Susunan" & "Ganti Saran"
+                // ==================== ACTIONS: COBA OUTFIT / DETAIL / TUNER / SHUFFLE ====================
                 Row(
                   children: [
                     // Primary Try On CTA
@@ -741,14 +1216,19 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => TryOnProcessingScreen(
-                                selectedWardrobe: comboPieces,
-                                occasion: 'Gaya Hari Ini',
-                                fitScore: suggestion['matchScore'] as int,
+                                newProduct: isCatalogMix ? catalogProduct : null,
+                                selectedWardrobe: ownedComboPieces,
+                                occasion: _suggestionOccasion == 'Semua Acara'
+                                    ? (suggestion['occasion'] as String? ?? 'Gaya Hari Ini')
+                                    : _suggestionOccasion,
+                                fitScore: suggestion['matchScore'] as int? ?? 95,
                                 reasons: [
                                   suggestion['description'] as String,
-                                  'Proporsi siluet sesuai bentuk tubuh',
-                                  'Kombinasi warna monokromatis seimbang',
-                                  'Seluruh pakaian merupakan koleksi lemarimu',
+                                  'Sesuai untuk acara ${_suggestionOccasion == 'Semua Acara' ? suggestion['occasion'] : _suggestionOccasion}',
+                                  'Gaya ${_suggestionStyle == 'Semua Gaya' ? suggestion['style'] : _suggestionStyle} yang serasi',
+                                  isCatalogMix
+                                      ? 'Memadukan koleksi lemarimu dengan produk pelengkap toko'
+                                      : 'Seluruh pakaian merupakan koleksi lemarimu',
                                 ],
                               ),
                             ),
@@ -756,8 +1236,10 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                         },
                         icon: const Icon(Icons.auto_awesome, size: 15, color: Colors.white),
                         label: Text(
-                          'Coba Outfit Hari Ini',
+                          isCatalogMix ? 'Coba Outfit & Produk Baru' : 'Coba Outfit Hari Ini',
                           style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryPurple,
@@ -768,13 +1250,34 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                     ),
                     const SizedBox(width: 8),
 
+                    // If catalog mix, add button to inspect catalog product
+                    if (isCatalogMix && catalogProduct != null) ...[
+                      IconButton.outlined(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProductDetailScreen(product: catalogProduct),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.shopping_bag_outlined, size: 18, color: AppColors.primaryPurple),
+                        tooltip: 'Lihat Produk Toko',
+                        style: IconButton.styleFrom(
+                          side: const BorderSide(color: AppColors.border),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+
                     // Load into Builder button
                     IconButton.outlined(
                       onPressed: () {
-                        _applySuggestionToBuilder(_todaySuggestionIndex, appState);
+                        _applyCurrentSuggestionToBuilder(appState);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Saran outfit hari ini dimasukkan ke kotak susun outfit.'),
+                            content: Text('Pakaian lemarimu dimasukkan ke kotak susun outfit.'),
                             duration: Duration(seconds: 1),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -881,7 +1384,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                     tooltip: 'Acak AI Outfit',
                     onPressed: () {
                       _cycleNextSuggestion(appState);
-                      _applySuggestionToBuilder(_todaySuggestionIndex, appState);
+                      _applyCurrentSuggestionToBuilder(appState);
                     },
                   ),
                 ],
