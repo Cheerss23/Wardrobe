@@ -5,7 +5,6 @@ import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'discover_screen.dart';
-import 'ai_stylist_screen.dart';
 import 'wardrobe_screen.dart';
 import 'profile_screen.dart';
 import 'saved_screen.dart';
@@ -17,7 +16,6 @@ class MainShellScreen extends StatelessWidget {
   static const List<Widget> _screens = [
     HomeScreen(),
     DiscoverScreen(),
-    AIStylistScreen(),
     WardrobeScreen(),
     ProfileScreen(),
   ];
@@ -25,6 +23,9 @@ class MainShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+
+    // Guard against index out of range if index was 4 previously
+    final safeIndex = appState.currentTabIndex.clamp(0, _screens.length - 1);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -90,7 +91,7 @@ class MainShellScreen extends StatelessWidget {
         ],
       ),
       body: IndexedStack(
-        index: appState.currentTabIndex,
+        index: safeIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
@@ -99,7 +100,7 @@ class MainShellScreen extends StatelessWidget {
           border: Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: NavigationBar(
-          selectedIndex: appState.currentTabIndex,
+          selectedIndex: safeIndex,
           onDestinationSelected: (idx) => appState.setTabIndex(idx),
           backgroundColor: AppColors.surface,
           indicatorColor: AppColors.primaryPurpleLight,
@@ -114,11 +115,6 @@ class MainShellScreen extends StatelessWidget {
               icon: Icon(Icons.explore_outlined),
               selectedIcon: Icon(Icons.explore_rounded, color: AppColors.primaryPurple),
               label: 'Discover',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.auto_awesome_outlined),
-              selectedIcon: Icon(Icons.auto_awesome, color: AppColors.primaryPurple),
-              label: 'AI Stylist',
             ),
             NavigationDestination(
               icon: Icon(Icons.checkroom_outlined),

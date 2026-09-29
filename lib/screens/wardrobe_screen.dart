@@ -34,6 +34,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   WardrobePiece? _builderBottom;
   WardrobePiece? _builderShoes;
   WardrobePiece? _builderAccessory;
+  ProductItem? _builderCatalogProduct; // Item dari katalog toko jika dipadukan
 
   @override
   void initState() {
@@ -268,6 +269,9 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       _builderBottom = suggestion['bottom'] as WardrobePiece?;
       _builderShoes = suggestion['shoes'] as WardrobePiece?;
       _builderAccessory = suggestion['accessory'] as WardrobePiece?;
+      _builderCatalogProduct = (suggestion['isCatalogMix'] == true)
+          ? suggestion['catalogProduct'] as ProductItem?
+          : null;
     });
   }
 
@@ -275,6 +279,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     final list = _getFilteredSuggestions(appState);
     setState(() {
       _todaySuggestionIndex = (_todaySuggestionIndex + 1) % list.length;
+      _applyCurrentSuggestionToBuilder(appState);
     });
   }
 
@@ -313,6 +318,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       _builderBottom = null;
       _builderShoes = null;
       _builderAccessory = null;
+      _builderCatalogProduct = null;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -334,7 +340,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
   void _tryOnAssembledOutfit() {
     final pieces = _assembledPieces;
-    if (pieces.length < 2) {
+    if (pieces.length < 2 && _builderCatalogProduct == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Pilih minimal Atasan & Bawahan untuk mencoba outfit di ruang ganti virtual.'),
@@ -350,17 +356,152 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => TryOnProcessingScreen(
+          newProduct: _builderCatalogProduct,
           selectedWardrobe: pieces,
           occasion: _suggestionOccasion == 'Semua Acara' ? 'Outfit Pilihan Saya' : _suggestionOccasion,
           fitScore: 97,
-          reasons: const [
+          reasons: [
             'Kombinasi hasil rancangan personal dari koleksi lemarimu',
+            if (_builderCatalogProduct != null)
+              'Dipadukan sempurna dengan ${_builderCatalogProduct!.name} dari katalog toko'
+            else
+              'Pakaian siap pakai 100% dari koleksi lemarimu tanpa perlu membeli item baru',
             'Siluet tubuh proporsional dengan keseimbangan warna yang selaras',
             'Sangat cocok dan nyaman untuk cuaca cerah hari ini (28°C)',
-            'Pakaian siap pakai tanpa perlu membeli item baru',
           ],
         ),
       ),
+    );
+  }
+
+  void _showCatalogPickerModal(BuildContext context, AppState appState) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (sheetContext, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryPurpleLight,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primaryPurple, size: 16),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Pilih Produk dari Toko',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryText,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Padukan pakaian lemarimu dengan salah satu produk toko pilihan',
+                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.secondaryText),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: scrollController,
+                      itemCount: appState.products.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, i) {
+                        final product = appState.products[i];
+                        final isSelected = _builderCatalogProduct?.id == product.id;
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(vertical: 6),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(product.image, width: 52, height: 52, fit: BoxFit.cover),
+                          ),
+                          title: Text(
+                            product.name,
+                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Row(
+                            children: [
+                              Text(
+                                product.formattedPrice,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryPurple,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                product.category,
+                                style: GoogleFonts.inter(fontSize: 11, color: AppColors.secondaryText),
+                              ),
+                            ],
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              setState(() {
+                                _builderCatalogProduct = product;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('"${product.name}" dipadukan ke susunan outfit!'),
+                                  backgroundColor: AppColors.primaryPurpleDark,
+                                  duration: const Duration(seconds: 1),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isSelected ? AppColors.primaryGreen : AppColors.primaryPurple,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            ),
+                            child: Text(
+                              isSelected ? 'Terpilih' : 'Padukan',
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -853,6 +994,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                               setState(() {
                                 _useCatalogItems = false;
                                 _todaySuggestionIndex = 0;
+                                _applyCurrentSuggestionToBuilder(appState);
                               });
                             }
                           },
@@ -892,6 +1034,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                               setState(() {
                                 _useCatalogItems = true;
                                 _todaySuggestionIndex = 0;
+                                _applyCurrentSuggestionToBuilder(appState);
                               });
                             }
                           },
@@ -959,6 +1102,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             setState(() {
                               _suggestionOccasion = occ;
                               _todaySuggestionIndex = 0;
+                              _applyCurrentSuggestionToBuilder(appState);
                             });
                           },
                           selectedColor: AppColors.primaryPurple,
@@ -1013,6 +1157,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             setState(() {
                               _suggestionStyle = st;
                               _todaySuggestionIndex = 0;
+                              _applyCurrentSuggestionToBuilder(appState);
                             });
                           },
                           selectedColor: AppColors.primaryPurple,
@@ -1276,9 +1421,14 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                       onPressed: () {
                         _applyCurrentSuggestionToBuilder(appState);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pakaian lemarimu dimasukkan ke kotak susun outfit.'),
-                            duration: Duration(seconds: 1),
+                          SnackBar(
+                            content: Text(
+                              isCatalogMix
+                                  ? 'Saran outfit lemari & produk katalog dipasang ke susunan outfit!'
+                                  : 'Pakaian lemarimu dimasukkan ke kotak susun outfit.',
+                            ),
+                            backgroundColor: AppColors.primaryPurpleDark,
+                            duration: const Duration(seconds: 1),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -1443,6 +1593,126 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
             ],
           ),
 
+          const SizedBox(height: 12),
+
+          // Catalog Product Mix Section in Outfit Builder
+          if (_builderCatalogProduct != null)
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primaryPurpleLight.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primaryPurple.withValues(alpha: 0.4), width: 1.2),
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      _builderCatalogProduct!.image,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryPurple,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                'DIPADUKAN DGN KATALOG',
+                                style: GoogleFonts.inter(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _builderCatalogProduct!.formattedPrice,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryPurple,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _builderCatalogProduct!.name,
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryText),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  TextButton(
+                    onPressed: () => _showCatalogPickerModal(context, appState),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: Text(
+                      'Ganti',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16, color: AppColors.secondaryText),
+                    tooltip: 'Hapus Item Katalog',
+                    onPressed: () {
+                      setState(() {
+                        _builderCatalogProduct = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            )
+          else
+            InkWell(
+              onTap: () => _showCatalogPickerModal(context, appState),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primaryPurple.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_circle_outline_rounded, size: 15, color: AppColors.primaryPurple),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Padukan dengan Item dari Toko (Katalog)',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryPurple,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           const SizedBox(height: 14),
 
           // Status & Try On CTA
@@ -1466,12 +1736,16 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             height: 8,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: assembledCount >= 2 ? AppColors.primaryGreen : Colors.orange,
+                              color: (assembledCount >= 2 || (assembledCount >= 1 && _builderCatalogProduct != null))
+                                  ? AppColors.primaryGreen
+                                  : Colors.orange,
                             ),
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '$assembledCount/4 Item Terpasang',
+                            _builderCatalogProduct != null
+                                ? '$assembledCount Item Lemari + 1 Produk Toko'
+                                : '$assembledCount/4 Item Terpasang',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -1482,7 +1756,9 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        assembledCount >= 2 ? 'Kombinasi siap dicoba di avatar' : 'Tambahkan atasan & bawahan',
+                        _builderCatalogProduct != null
+                            ? 'Paduan lemari & produk katalog siap dicoba'
+                            : (assembledCount >= 2 ? 'Kombinasi siap dicoba di avatar' : 'Tambahkan atasan & bawahan'),
                         style: GoogleFonts.inter(fontSize: 10, color: AppColors.secondaryText),
                       ),
                     ],

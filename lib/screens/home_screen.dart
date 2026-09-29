@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 import 'shop_this_look_screen.dart';
 import 'cart_screen.dart';
 import 'saved_screen.dart';
-import 'try_on_studio_screen.dart';
+import 'try_with_wardrobe_screen.dart';
 import '../widgets/product_catalog_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -371,29 +371,33 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                   Row(
                                     children: [
-                                      // Secondary CTA: Try This Look
-                                      OutlinedButton(
+                                      // Secondary CTA: Try Look -> Complete Your Look with Wardrobe
+                                      OutlinedButton.icon(
                                         onPressed: () {
-                                          appState.startTryOnWithLook(heroOutfit.items);
+                                          final targetProduct = heroOutfit.items.firstWhere(
+                                            (item) => !item.isOwned,
+                                            orElse: () => heroOutfit.items.first,
+                                          );
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => const TryOnStudioScreen(),
+                                              builder: (_) => TryWithWardrobeScreen(product: targetProduct),
                                             ),
                                           );
                                         },
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                          side: const BorderSide(color: AppColors.primaryPurple),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                        ),
-                                        child: Text(
+                                        icon: const Icon(Icons.auto_awesome, size: 14, color: AppColors.primaryPurple),
+                                        label: Text(
                                           'Try Look',
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.primaryPurple,
                                           ),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                          side: const BorderSide(color: AppColors.primaryPurple),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -568,7 +572,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton(
-                            onPressed: () => appState.setTabIndex(2), // Jump to AI Stylist tab
+                            onPressed: () => appState.setTabIndex(2), // Jump to Wardrobe tab
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: AppColors.primaryPurple,
@@ -576,7 +580,7 @@ class HomeScreen extends StatelessWidget {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             child: Text(
-                              'Konsultasi AI Stylist',
+                              'Cek Saran Outfit Lemari',
                               style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ),

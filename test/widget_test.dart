@@ -218,5 +218,36 @@ void main() {
     expect(find.text('Coba dgn Lemari'), findsWidgets);
     expect(find.text('Lihat Detail'), findsWidgets);
   });
+
+  testWidgets('WardrobeScreen harmonizes Outfit Builder with Padukan dgn Katalog mode', (WidgetTester tester) async {
+    final appState = AppState();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: appState,
+        child: const MaterialApp(
+          home: WardrobeScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    // Tap "Padukan dgn Katalog" tab
+    await tester.tap(find.text('Padukan dgn Katalog'));
+    await tester.pump();
+
+    // Verify Catalog mix badge is active in suggestion
+    expect(find.text('LEMARI + PRODUK KATALOG'), findsOneWidget);
+    expect(find.text('Coba Outfit & Produk Baru'), findsOneWidget);
+
+    // Scroll to Outfit Builder
+    await tester.drag(find.byType(ListView), const Offset(0, -350));
+    await tester.pump();
+
+    // Verify Outfit Builder displays "DIPADUKAN DGN KATALOG" badge and status
+    expect(find.text('DIPADUKAN DGN KATALOG'), findsOneWidget);
+    expect(find.textContaining('Produk Toko'), findsOneWidget);
+  });
 }
 
